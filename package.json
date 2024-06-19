@@ -1,0 +1,42 @@
+{
+  "name": "anon-digilocker",
+  "version": "0.1.0",
+  "description": "Create ZK proof of documents in DigiLocker with selective disclosure",
+  "main": "index.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anon-aadhaar/anon-digilocker.git"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "nohoist": [
+      "**/circomlib"
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/anon-aadhaar/anon-digilocker/issues"
+  },
+  "homepage": "https://github.com/anon-aadhaar/anon-digilocker#readme",
+  "devDependencies": {
+    "husky": "^8.0.0"
+  },
+  "keywords": [
+    "ethereum",
+    "anon-digilocker",
+    "solidity",
+    "circom",
+    "javascript",
+    "typescript",
+    "zero-knowledge",
+    "zk-snarks",
+    "zero-knowledge-proofs",
+    "proof-of-identity",
+    "digilocker"
+  ]
+}
