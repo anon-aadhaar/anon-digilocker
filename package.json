@@ -5,8 +5,6 @@
   "main": "index.js",
   "private": true,
   "license": "MIT",
-  "scripts": {
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anon-aadhaar/anon-digilocker.git"
@@ -38,5 +36,6 @@
     "zero-knowledge-proofs",
     "proof-of-identity",
     "digilocker"
-  ]
+  ],
+  "packageManager": "yarn@4.3.1"
 }
