@@ -27,7 +27,8 @@
   },
   "devDependencies": {
     "@types/circomlibjs": "^0.1.6",
-    "@zk-email/helpers": "^6.1.1",
+    "@types/node": "^20.4.8",
+    "@zk-email/helpers": "^6.1.2",
     "assert": "^2.1.0",
     "circom_tester": "^0.0.20",
     "circomlib": "^2.0.5",
@@ -35,7 +36,10 @@
     "dotenv": "^16.4.5",
     "mocha": "^10.2.0",
     "prettier": "^3.1.1",
-    "snarkjs": "^0.7.4"
+    "snarkjs": "^0.7.4",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.1.6",
+    "xmldsigjs": "^2.5.1"
   },
   "resolutions": {
     "snarkjs": "^0.7.4"
