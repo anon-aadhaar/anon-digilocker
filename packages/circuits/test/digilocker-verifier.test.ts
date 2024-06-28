@@ -53,13 +53,13 @@ async function prepareTestData() {
     doc.documentElement,
   );
 
+  // @ts-ignore
+  const signedInfo = signedXml.TransformSignedInfo(signedXml);
+
   const signatureB64 = signature[0].getElementsByTagName("SignatureValue")[0]
     .textContent as string;
   const signatureBuff = Buffer.from(signatureB64, "base64");
   const signatureBigInt = BigInt('0x' + signatureBuff.toString("hex"));
-
-  // @ts-ignore
-  const signedInfo = Buffer.from(signedXml.TransformSignedInfo(signedXml));
 
   const signedDataHaser = crypto.createHash("sha256");
   signedDataHaser.update(signedData);
@@ -73,18 +73,21 @@ async function prepareTestData() {
   // Local verification (optional)
   const rsaResult = crypto.verify(
     "RSA-SHA1",
-    signedInfo,
+    Buffer.from(signedInfo),
     publicKey,
     signatureBuff,
   );
+
   assert(rsaResult, "Local: RSA verification failed");
 
   // inputs
-  const [signedDataPadded, signedDataPaddedLength] = sha256Pad(signedData, 512 * 4)
+  const [signedDataPadded, signedDataPaddedLength] = sha256Pad(Buffer.from(signedData), 512 * 4)
+  const signedInfoArr = Uint8Array.from(Buffer.from(signedInfo));
+
   const inputs =  {
     dataPadded: Uint8ArrayToCharArray(signedDataPadded),
     dataPaddedLength: signedDataPaddedLength,
-    signedInfo: Uint8ArrayToCharArray(Uint8Array.from(signedInfo)),
+    signedInfo: Uint8ArrayToCharArray(signedInfoArr),
     dataHashIndex: dataHashIndex,
     signature: bigIntToChunkedBytes(signatureBigInt, 121, 17),
     pubKey: bigIntToChunkedBytes(pubKeyBigInt, 121,17),
@@ -98,21 +101,21 @@ describe("DigiLockerVerifier", function () {
 
   let circuit: any;
 
-  // this.beforeAll(async () => {
-  //   const pathToCircuit = path.join(
-  //     __dirname,
-  //     '../src',
-  //     'digilocker-verifier.circom',
-  //   )
-  //   circuit = await circom_tester(pathToCircuit, {
-  //     recompile: true,
-  //     // output: path.join(__dirname, '../build'),
-  //     include: [
-  //       path.join(__dirname, '../node_modules'),
-  //       path.join(__dirname, '../../../node_modules'),
-  //     ],
-  //   })
-  // })
+  this.beforeAll(async () => {
+    const pathToCircuit = path.join(
+      __dirname,
+      '../src',
+      'digilocker-verifier.circom',
+    )
+    circuit = await circom_tester(pathToCircuit, {
+      recompile: true,
+      // output: path.join(__dirname, '../build'),
+      include: [
+        path.join(__dirname, '../node_modules'),
+        path.join(__dirname, '../../../node_modules'),
+      ],
+    })
+  })
 
   it("should generate witness for circuit with Sha256RSA signature", async () => {
     const { inputs } = await prepareTestData();
