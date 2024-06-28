@@ -23,7 +23,8 @@
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   },
   "dependencies": {
-    "@zk-email/circuits": "^6.1.1"
+    "@zk-email/circuits": "^6.1.1",
+    "sha1-circom": "https://github.com/anon-aadhaar/sha1-circom"
   },
   "devDependencies": {
     "@types/circomlibjs": "^0.1.6",

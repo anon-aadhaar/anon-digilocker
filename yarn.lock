@@ -20,6 +20,7 @@ __metadata:
     dotenv: "npm:^16.4.5"
     mocha: "npm:^10.2.0"
     prettier: "npm:^3.1.1"
+    sha1-circom: "https://github.com/anon-aadhaar/sha1-circom"
     snarkjs: "npm:^0.7.4"
     ts-mocha: "npm:^10.0.0"
     typescript: "npm:^5.1.6"
@@ -962,6 +963,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"child_process@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "child_process@npm:1.0.2"
+  checksum: 10c0/6e45dff224c704dc5c5edc14532e6c0c5c23a7c5f823574349246082d94a29780a68a46155d8a6989ffa986cb12ed0b01fbfc6c713b6655959fabb6b8cd52e4a
+  languageName: node
+  linkType: hard
+
 "chokidar@npm:^3.5.3":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
@@ -1007,6 +1015,22 @@ __metadata:
   bin:
     calcwit: calcwit.js
   checksum: 10c0/231f97810828c7ac297e891ebccd853999811ecb3003ee5d6c221f66bc51af77883121b60f2cd10a9338bde4a21ed150c0527b593b2ee0486fd23697644ee96e
+  languageName: node
+  linkType: hard
+
+"circom_tester@npm:^0.0.19":
+  version: 0.0.19
+  resolution: "circom_tester@npm:0.0.19"
+  dependencies:
+    chai: "npm:^4.3.6"
+    child_process: "npm:^1.0.2"
+    ffjavascript: "npm:^0.2.56"
+    fnv-plus: "npm:^1.3.1"
+    r1csfile: "npm:^0.0.41"
+    snarkjs: "npm:0.5.0"
+    tmp-promise: "npm:^3.0.3"
+    util: "npm:^0.12.4"
+  checksum: 10c0/a09372c360cc2dfda85e888cc37c6b9daa8ec77728b9f6c91e84ef15cfc02a99cd66de8e01d7008827be7d13930e84ab3cdd9b185de117fd848d645b0975056d
   languageName: node
   linkType: hard
 
@@ -1445,7 +1469,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ffjavascript@npm:^0.2.45, ffjavascript@npm:^0.2.48, ffjavascript@npm:^0.2.60":
+"ffjavascript@npm:^0.2.45, ffjavascript@npm:^0.2.48, ffjavascript@npm:^0.2.56, ffjavascript@npm:^0.2.60":
   version: 0.2.63
   resolution: "ffjavascript@npm:0.2.63"
   dependencies:
@@ -2644,7 +2668,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"r1csfile@npm:0.0.41":
+"r1csfile@npm:0.0.41, r1csfile@npm:^0.0.41":
   version: 0.0.41
   resolution: "r1csfile@npm:0.0.41"
   dependencies:
@@ -2776,6 +2800,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"sha1-circom@https://github.com/anon-aadhaar/sha1-circom":
+  version: 1.0.0
+  resolution: "sha1-circom@https://github.com/anon-aadhaar/sha1-circom.git#commit=a91e785a1bea0c4ed843092273e5a15108aa09ae"
+  dependencies:
+    circom_tester: "npm:^0.0.19"
+    snarkjs: "npm:^0.5.0"
+  checksum: 10c0/2b1624d403f02290695ac25b4ba950ca5541a1bca36c30aee1adccf03d9a9674ab981abab5070b6c74bcdb33d3272461b67ff5d20f2fecfd52efba43276bdcf8
+  languageName: node
+  linkType: hard
+
 "shebang-command@npm:^2.0.0":
   version: 2.0.0
   resolution: "shebang-command@npm:2.0.0"
@@ -2824,6 +2858,26 @@ __metadata:
   bin:
     snarkjs: build/cli.cjs
   checksum: 10c0/44fc2beaf1a0dd7e89b51178a2f179d29f3e235509018f488603614dba049c51cb6f80eaa94329d2882d1edf61d9bf86d0a98480ccfbd9bf4d3dcdda5008431c
+  languageName: node
+  linkType: hard
+
+"snarkjs@npm:0.5.0, snarkjs@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "snarkjs@npm:0.5.0"
+  dependencies:
+    "@iden3/binfileutils": "npm:0.0.11"
+    bfj: "npm:^7.0.2"
+    blake2b-wasm: "npm:^2.4.0"
+    circom_runtime: "npm:0.1.21"
+    ejs: "npm:^3.1.6"
+    fastfile: "npm:0.0.20"
+    ffjavascript: "npm:0.2.56"
+    js-sha3: "npm:^0.8.0"
+    logplease: "npm:^1.2.15"
+    r1csfile: "npm:0.0.41"
+  bin:
+    snarkjs: build/cli.cjs
+  checksum: 10c0/225393f86c4be83f952efea0863e12d0bef24bf84302ebc0a22454bb91104c11090800da202fa5f24823567383b74987448ed36059a0563db2eac6b0542146e4
   languageName: node
   linkType: hard
 
@@ -3166,7 +3220,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"util@npm:^0.12.5":
+"util@npm:^0.12.4, util@npm:^0.12.5":
   version: 0.12.5
   resolution: "util@npm:0.12.5"
   dependencies:
