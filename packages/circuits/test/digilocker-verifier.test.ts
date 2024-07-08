@@ -41,9 +41,6 @@ async function prepareTestData() {
   const pubKeyBigInt = BigInt(
     "0x" + Buffer.from(publicKeyJWK.n as string, "base64").toString("hex"),
   );
-  const exponent = BigInt(
-    "0x" + Buffer.from(publicKeyJWK.e as string, "base64").toString("hex"),
-  );
 
   const references = signedXml.XmlSignature.SignedInfo.References.GetIterator();
   if (references.length !== 1) {
@@ -73,62 +70,31 @@ async function prepareTestData() {
     throw new Error("Body hash not found SignedInfo");
   }
 
-  // const sha1 = crypto.createHash("sha1");
-  // sha1.update(Buffer.from(signedInfo));
-  // console.log(sha1.digest().toString("hex"))
 
-  // console.log("message", BigInt('0x' + sha1.digest().toString("hex")))
-  // console.log("signatureBigInt", signatureBigInt)
-  // console.log("pubKeyBigInt", pubKeyBigInt)
+  // Local verification
+  const sha1 = crypto.createHash("sha1");
+  sha1.update(Buffer.from(signedInfo));
 
-  // Local verification (optional)
-  // const rsaResult = crypto.verify(
-  //   "RSA-SHA1",
-  //   Buffer.from(signedInfo),
-  //   publicKey,
-  //   signatureBuff,
-  // );
-
-  // console.log("exponent", exponent);
-
-  // const messsageBigInt = BigInt('0x' + sha1.digest().toString("hex"));
-  const signatureBigInt2 = BigInt("0x" + signatureBuff.toString("hex"));
-
-  // ASN.1 DER prefix for SHA-1
+  // Prepare the padded message as per PKCS1v1.5
   const ASN1_PREFIX_SHA1 = Buffer.from("3021300906052b0e03021a05000414", "hex");
-
-  // Combine ASN.1 prefix and hash
-  const tBuffer = Buffer.concat([ASN1_PREFIX_SHA1, sha1.digest()]);
-
-  // Calculate the padding length (modulus length - 3 - T length)
-  const keyLength = 2048 / 8; // RSA key length in bytes (e.g., 2048 bits)
-  const paddingLength = keyLength - tBuffer.length - 3;
-
-  // console.log("paddingLength", paddingLength)
-
-  // Create padding buffer (all 0xFF)
-  const paddingBuffer = Buffer.alloc(paddingLength, 0xff);
-
-  // Construct the full padded message
+  const hashWithPrefx = Buffer.concat([ASN1_PREFIX_SHA1, sha1.digest()]);
+  const paddingLength = 256 - hashWithPrefx.length - 3; // = 218; 3 bytes for 0x00 and 0x01 and 0x00
   const paddedMessage = Buffer.concat([
     Buffer.from([0x00, 0x01]),
-    paddingBuffer,
+    Buffer.alloc(paddingLength, 0xff),
     Buffer.from([0x00]),
-    tBuffer,
+    hashWithPrefx,
   ]);
-
-  // const chunkgs = bigIntToChunkedBytes(BigInt('0x' + paddedMessage.toString("hex")), 121, 17);
-
-  // console.log(chunkgs);
+  const paddedMessageBigInt = BigInt("0x" + paddedMessage.toString("hex"));
+  const exponent = BigInt(
+    "0x" + Buffer.from(publicKeyJWK.e!, "base64").toString("hex"),
+  ); // 65537
 
   const rsaResult =
-    BigInt("0x" + paddedMessage.toString("hex")) ===
-    signatureBigInt2 ** exponent % pubKeyBigInt;
-
-
-  // console.log("rsaResult2", rsaResult2);
+    paddedMessageBigInt === signatureBigInt ** exponent % pubKeyBigInt;
 
   assert(rsaResult, "Local: RSA verification failed");
+
 
   // inputs
   const [signedDataPadded, signedDataPaddedLength] = sha256Pad(
@@ -157,24 +123,24 @@ describe("DigiLockerVerifier", function () {
   this.beforeAll(async () => {
     const pathToCircuit = path.join(
       __dirname,
-      '../src',
-      'digilocker-verifier.circom',
-    )
+      "../src",
+      "digilocker-verifier.circom",
+    );
     circuit = await circom_tester(pathToCircuit, {
       recompile: true,
       // output: path.join(__dirname, '../build'),
       include: [
-        path.join(__dirname, '../node_modules'),
-        path.join(__dirname, '../../../node_modules'),
+        path.join(__dirname, "../node_modules"),
+        path.join(__dirname, "../../../node_modules"),
       ],
-    })
-  })
+    });
+  });
 
   it("should generate witness for circuit with Sha256RSA signature", async () => {
     const { inputs } = await prepareTestData();
 
-    console.log(inputs)
+    console.log(inputs);
 
-    await circuit.calculateWitness(inputs)
+    await circuit.calculateWitness(inputs);
   });
 });
