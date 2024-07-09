@@ -2,8 +2,9 @@ pragma circom 2.1.9;
 
 include "circomlib/circuits/bitify.circom";
 include "circomlib/circuits/poseidon.circom";
+include "@zk-email/circuits/lib/sha.circom";
 include "@zk-email/circuits/lib/rsa.circom";
-// include "@zk-email/circuits/lib/sha.circom";
+include "@zk-email/circuits/lib/base64.circom";
 include "@zk-email/circuits/utils/array.circom";
 // include "./rsa-sha1.circom";
 include "./sha1.circom";
@@ -22,26 +23,64 @@ template SignatureVerifier(n, k, maxDataLength) {
 	signal output pubkeyHash;
 
   // Hash the data
-  // component dataHasher = Sha256Bytes(maxDataLength);
-  // dataHasher.paddedIn <== dataPadded;
-  // dataHasher.paddedInLength <== dataPaddedLength;
-  // signal dataHash[256];
-  // dataHash <== dataHasher.out;
+  component dataHasher = Sha256Bytes(maxDataLength);
+  dataHasher.paddedIn <== dataPadded;
+  dataHasher.paddedInLength <== dataPaddedLength;
+  signal dataHash[256];
+  dataHash <== dataHasher.out;
 
-	// TODO Assert hash is present in the signed info in the given index
-	// component shifter = VarShiftLeft(signedInfoMaxLength, signedInfoMaxLength - );
-	// shifter.in <== nDelimitedData;
-	// shifter.shift <== startDelimiterIndex;
+	// Assert hash is present in the signed info in the given index - shift and check first 71 elements
+  // 71 = Length of (<DigestValue> + base64 encoded SHA256 hash (44) + <DigestValue>)
+	component shifter = VarShiftLeft(signedInfoMaxLength, 71);
+	shifter.in <== signedInfo;
+	shifter.shift <== dataHashIndex;
+  signal digestValueNode[71] <== shifter.out;
+
+  // Assert first 13 elements are <DigestValue>
+  // digestValueNode[0] === 0x3c;
+  // digestValueNode[1] === 0x44;
+  // digestValueNode[2] === 0x69;
+  // digestValueNode[3] === 0x67;
+  // digestValueNode[4] === 0x65;
+  // digestValueNode[5] === 0x73;
+  // digestValueNode[6] === 0x74;
+  // digestValueNode[7] === 0x56;
+  // digestValueNode[8] === 0x61;
+  // digestValueNode[9] === 0x6c;
+  // digestValueNode[10] === 0x75;
+  // digestValueNode[11] === 0x65;
+
+  // Decode 44 chars of base64 encoded SHA256 hash to 32 bytes
+  component base64Decoder = Base64Decode(32);
+  for (var i = 0; i < 44; i++) {
+    base64Decoder.in[i] <== digestValueNode[i];
+  }
+  signal dataHashDecoded[32] <== base64Decoder.out;
+  
+  
+  // Assert the decoded hash is equal to the hash of the data
+  component dataHashBytes[32];
+  for (var i = 0; i < 32; i++) {
+    dataHashBytes[i] = Bits2Num(8);
+  }
+  for (var i = 0; i < 256; i++) {
+    dataHashBytes[i \ 8].in[i % 8] <== dataHash[255 - i];
+  }
+
+  for (var i = 0; i < 32; i++) {
+    dataHashBytes[31 - i].out === dataHashDecoded[i];
+  }
+
 
   component signedInfoHasher = Sha1Bytes(signedInfoMaxLength);
   signedInfoHasher.in <== signedInfo;
   signal signedInfoHash[160];
   signedInfoHash <== signedInfoHasher.out;
 
+
   // Structure for SHA1 input to RSA as per ASN1
   // [0x00, 0x01, 0xff...(218 times), 0x00, 0x3021300906052b0e03021a05000414 (15bytes), SHA1hash (20bytes)]
   // Note: We are only considering 2048 bit keys
-
   var rsaInputLength = (2048 + n) \ n;
   component rsaInput[rsaInputLength];
   
@@ -126,7 +165,6 @@ template SignatureVerifier(n, k, maxDataLength) {
   component rsa = RSAVerifier65537(n, k);
 
   for (var i = 0; i < rsaInputLength; i++) {
-    log("rsaInput", rsaInput[i].out);
       rsa.message[i] <== rsaInput[i].out;
   }
 

@@ -70,7 +70,6 @@ async function prepareTestData() {
     throw new Error("Body hash not found SignedInfo");
   }
 
-
   // Local verification
   const sha1 = crypto.createHash("sha1");
   sha1.update(Buffer.from(signedInfo));
