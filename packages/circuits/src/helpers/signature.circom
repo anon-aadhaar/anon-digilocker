@@ -6,7 +6,7 @@ include "@zk-email/circuits/lib/sha.circom";
 include "@zk-email/circuits/lib/rsa.circom";
 include "@zk-email/circuits/lib/base64.circom";
 include "@zk-email/circuits/utils/array.circom";
-include "./sha1.circom";
+include "../lib/sha1.circom";
 
 
 template SignatureVerifier(n, k, maxDataLength) {
@@ -64,61 +64,13 @@ template SignatureVerifier(n, k, maxDataLength) {
   signedInfoHash <== signedInfoHasher.out;
 
 
-  // Pad SHA1 hash as input to RSA as per ASN1
-  // [0x00, 0x01, 0xff...(218 times), 0x00, 0x3021300906052b0e03021a05000414 (15bytes), SHA1hash (20bytes)]
-  // Note: We are only considering 2048 bit keys
-  var rsaInputLength = (2048 + n) \ n;
-  component rsaInput[rsaInputLength];
-  
-  for (var i = 0; i < rsaInputLength; i++) {
-      rsaInput[i] = Bits2Num(n);
-  }
+  component shaPadder = SHA1PadASN1(n);
+  shaPadder.sha1Hash <== signedInfoHash;
 
-  var ASN1_PREFIX_SHA1 = 249903374471035965343514536750089236;
-  signal asn1Prefix[120] <== Num2Bits(120)(ASN1_PREFIX_SHA1);
-
-  for (var i = 0; i < n * rsaInputLength; i++) {
-    // Set SHA1 output to the first 20 bytes
-    if (i < 20 * 8) {
-      rsaInput[i \ n].in[i % n] <== signedInfoHash[(20 * 8 - 1) - i];
-    }
-
-    // Set next 15 bytes to ASN1_PREFIX_SHA1
-    if (i >= 20 * 8 && i < 35 * 8) {
-      rsaInput[i \ n].in[i % n] <== asn1Prefix[i - (20 * 8)];
-    }
-
-    // Set next byte to 0x00
-    if (i >= 35 * 8 && i < 36 * 8) {
-      rsaInput[i \ n].in[i % n] <== 0;
-    }
-
-    // Set the next 218 bytes to 0xff
-    if (i >= 36 * 8 && i < 254 * 8) {
-      rsaInput[i \ n].in[i % n] <== 1;
-    }
-
-    // Set the next bytes to [0x00, 0x01] 
-    if (i == 254 * 8) {
-      rsaInput[i \ n].in[i % n] <== 1;
-    }
-    if (i > 254 * 8 && i < 256 * 8) {
-      rsaInput[i \ n].in[i % n] <== 0;
-    }
-
-    // Set remaining bits to 0 for Num2Bits
-    if (i >= 256 * 8) {
-      rsaInput[i \ n].in[i % n] <== 0;
-    }
-  }
 
   // Verify RSA signature with padded SHA1 hash
   component rsa = RSAVerifier65537(n, k);
-
-  for (var i = 0; i < rsaInputLength; i++) {
-      rsa.message[i] <== rsaInput[i].out;
-  }
-
+  rsa.message <== shaPadder.out;
   rsa.modulus <== pubKey;
   rsa.signature <== signature;
 
