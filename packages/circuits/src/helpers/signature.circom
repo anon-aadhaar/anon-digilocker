@@ -21,29 +21,15 @@ template SignatureVerifier(n, k, maxDataLength) {
 
 	signal output pubkeyHash;
 
-  // Hash the data
+
+  // Hash the signed data
   component dataHasher = Sha256Bytes(maxDataLength);
   dataHasher.paddedIn <== dataPadded;
   dataHasher.paddedInLength <== dataPaddedLength;
   signal dataHash[256];
   dataHash <== dataHasher.out;
 
-
-	// Assert hash is present in the signed info in the given index - shift and check first 71 elements
-  // 71 = Length of (<DigestValue> + base64 encoded SHA256 hash (44) + <DigestValue>)
-	component shifter = VarShiftLeft(signedInfoMaxLength, 71);
-	shifter.in <== signedInfo;
-	shifter.shift <== dataHashIndex;
-  signal digestValueNode[71] <== shifter.out;
-
-  // Decode 44 chars of base64 encoded SHA256 hash to 32 bytes
-  component base64Decoder = Base64Decode(32);
-  for (var i = 0; i < 44; i++) {
-    base64Decoder.in[i] <== digestValueNode[i];
-  }
-  signal dataHashDecoded[32] <== base64Decoder.out;
-  
-  // Assert the decoded hash is equal to the hash of the data
+  // Convert to bytes
   component dataHashBytes[32];
   for (var i = 0; i < 32; i++) {
     dataHashBytes[i] = Bits2Num(8);
@@ -52,21 +38,32 @@ template SignatureVerifier(n, k, maxDataLength) {
     dataHashBytes[i \ 8].in[i % 8] <== dataHash[255 - i];
   }
 
+
+	// Assert the hash is present in the <SignedInfo/Digest> node in the given index
+  // Shift left SignedInfo data by given index, base64 decode the first 44 chars, and compare
+  // 256 bits = 44 chars when base64 encoded
+	component shifter = VarShiftLeft(signedInfoMaxLength, 44);
+	shifter.in <== signedInfo;
+	shifter.shift <== dataHashIndex;
+
+  component base64Decoder = Base64Decode(32);
+  base64Decoder.in <== shifter.out;
+  signal dataHashDecoded[32] <== base64Decoder.out;
+  
   for (var i = 0; i < 32; i++) {
     dataHashBytes[31 - i].out === dataHashDecoded[i];
   }
 
 
-  // Hash <SignedInfo> node
+  // Hash <SignedInfo> node (which is what is signed by the RSA private key)
   component signedInfoHasher = Sha1Bytes(signedInfoMaxLength);
   signedInfoHasher.in <== signedInfo;
   signal signedInfoHash[160];
   signedInfoHash <== signedInfoHasher.out;
 
-
+  // Pad the SHA1 hash as per ASN1
   component shaPadder = SHA1PadASN1(n);
   shaPadder.sha1Hash <== signedInfoHash;
-
 
   // Verify RSA signature with padded SHA1 hash
   component rsa = RSAVerifier65537(n, k);
