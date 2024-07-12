@@ -73,17 +73,17 @@ template SignatureVerifier(n, k, maxDataLength) {
   // We are assuming k is > 16 and <= 32 (i.e we merge two consecutive item in array to bring down the size)
   var poseidonInputSize = k \ 2;
   if (k % 2 == 1) {
-      poseidonInputSize++;
+    poseidonInputSize++;
   }
   assert(poseidonInputSize <= 16);
 
   signal pubkeyHasherInput[poseidonInputSize];
   for (var i = 0; i < poseidonInputSize; i++) {
-      if (i == poseidonInputSize - 1 && k % 2 == 1) {
-          pubkeyHasherInput[i] <== pubKey[i * 2];
-      } else {
-          pubkeyHasherInput[i] <== pubKey[i * 2] + (1 << n) * pubKey[i * 2 + 1];
-      }
+    if (i == poseidonInputSize - 1 && k % 2 == 1) {
+      pubkeyHasherInput[i] <== pubKey[i * 2];
+    } else {
+      pubkeyHasherInput[i] <== pubKey[i * 2] + (1 << n) * pubKey[i * 2 + 1];
+    }
   }
   component pubkeyHasher = Poseidon(poseidonInputSize);
   pubkeyHasher.inputs <== pubkeyHasherInput;

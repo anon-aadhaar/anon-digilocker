@@ -101,20 +101,20 @@ template SHA1RSAVerifier(n, k) {
   component signatureRangeCheck[k];
   component bigLessThan = BigLessThan(n, k);
   for (var i = 0; i < k; i++) {
-      signatureRangeCheck[i] = Num2Bits(n);
-      signatureRangeCheck[i].in <== signature[i];
-      bigLessThan.a[i] <== signature[i];
-      bigLessThan.b[i] <== modulus[i];
+    signatureRangeCheck[i] = Num2Bits(n);
+    signatureRangeCheck[i].in <== signature[i];
+    bigLessThan.a[i] <== signature[i];
+    bigLessThan.b[i] <== modulus[i];
   }
   bigLessThan.out === 1;
 
   component bigPow = FpPow65537Mod(n, k);
   for (var i = 0; i < k; i++) {
-      bigPow.base[i] <== signature[i];
-      bigPow.modulus[i] <== modulus[i];
+    bigPow.base[i] <== signature[i];
+    bigPow.modulus[i] <== modulus[i];
   }
 
   for (var i = 0; i < k; i++) {
-      bigPow.out[i] === shaPadder.out[i];
+    bigPow.out[i] === shaPadder.out[i];
   }
 }
