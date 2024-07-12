@@ -38,7 +38,7 @@ template SHA1RSAPad(n) {
   // [0x00, 0x01, 0xff...(218 times), 0x00, 0x3021300906052b0e03021a05000414 (15bytes), SHA1hash (20bytes)]
   // Note: We are only considering 2048 bit keys
   component bitToNums[paddedLength];
-  
+
   for (var i = 0; i < paddedLength; i++) {
     bitToNums[i] = Bits2Num(n);
   }

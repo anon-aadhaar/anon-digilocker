@@ -9,16 +9,16 @@ include "../lib/sha1.circom";
 
 
 template SignatureVerifier(n, k, maxDataLength) {
-	var signedInfoMaxLength = 563;
+  var signedInfoMaxLength = 563;
 
-	signal input dataPadded[maxDataLength];
-	signal input dataPaddedLength;
-	signal input signedInfo[signedInfoMaxLength];
-	signal input dataHashIndex;
-	signal input signature[k];
-	signal input pubKey[k];
+  signal input dataPadded[maxDataLength];
+  signal input dataPaddedLength;
+  signal input signedInfo[signedInfoMaxLength];
+  signal input dataHashIndex;
+  signal input signature[k];
+  signal input pubKey[k];
 
-	signal output pubkeyHash;
+  signal output pubkeyHash;
 
 
   // Hash the signed data
@@ -38,17 +38,17 @@ template SignatureVerifier(n, k, maxDataLength) {
   }
 
 
-	// Assert the hash is present in the <SignedInfo/Digest> node in the given index
+  // Assert the hash is present in the <SignedInfo/Digest> node in the given index
   // Shift left SignedInfo data by given index, base64 decode the first 44 chars, and compare
   // 256 bits = 44 chars when base64 encoded
-	component shifter = VarShiftLeft(signedInfoMaxLength, 44);
-	shifter.in <== signedInfo;
-	shifter.shift <== dataHashIndex;
+  component shifter = VarShiftLeft(signedInfoMaxLength, 44);
+  shifter.in <== signedInfo;
+  shifter.shift <== dataHashIndex;
 
   component base64Decoder = Base64Decode(32);
   base64Decoder.in <== shifter.out;
   signal dataHashDecoded[32] <== base64Decoder.out;
-  
+
   for (var i = 0; i < 32; i++) {
     dataHashBytes[31 - i].out === dataHashDecoded[i];
   }

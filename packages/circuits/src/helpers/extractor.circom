@@ -6,7 +6,7 @@ include "@zk-email/circuits/utils/bytes.circom";
 
 
 template Extractor(n, k, maxDataLength) {
-	signal input dataPadded[maxDataLength];
+  signal input dataPadded[maxDataLength];
   signal input certificateDataNodeIndex;
   signal input documentTypeLength;
 
@@ -14,8 +14,8 @@ template Extractor(n, k, maxDataLength) {
 
   // Shift left till "<CertificateData>" node
   component certificateDataNodeShifter = VarShiftLeft(maxDataLength, maxDataLength \ 2);
-	certificateDataNodeShifter.in <== dataPadded;
-	certificateDataNodeShifter.shift <== certificateDataNodeIndex;
+  certificateDataNodeShifter.in <== dataPadded;
+  certificateDataNodeShifter.shift <== certificateDataNodeIndex;
   signal shitedData[maxDataLength \ 2] <== certificateDataNodeShifter.out;
 
   // Assert first 17 bytes are "<CertificateData>"
