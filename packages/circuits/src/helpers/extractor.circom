@@ -46,6 +46,4 @@ template Extractor(n, k, maxDataLength) {
   documentTypePacker.startIndex <== 0;
   documentTypePacker.length <== documentTypeLength; // Remove the last byte
   documentType <== documentTypePacker.out[0];
-  log("circuit: documentType");
-  log(documentType);
 }

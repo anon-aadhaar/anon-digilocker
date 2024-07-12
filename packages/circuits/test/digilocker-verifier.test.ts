@@ -16,6 +16,7 @@ import {
   bigIntToChunkedBytes,
   bufferToHex,
 } from "@zk-email/helpers/dist/binary-format";
+import { bigIntsToString } from "./util";
 
 require("dotenv").config();
 
@@ -48,10 +49,11 @@ async function prepareTestData() {
   }
 
   // @ts-ignore
-  const signedData = signedXml.ApplyTransforms(
+  const signedData: string = signedXml.ApplyTransforms(
     references[0].Transforms,
     doc.documentElement,
   );
+  // console.log(signedData, signedData.length);
 
   // @ts-ignore
   const signedInfo = signedXml.TransformSignedInfo(signedXml);
@@ -94,24 +96,36 @@ async function prepareTestData() {
 
   assert(rsaResult, "Local: RSA verification failed");
 
-
-  // inputs
   const [signedDataPadded, signedDataPaddedLength] = sha256Pad(
     Buffer.from(signedData),
     512 * 4,
   );
   const signedInfoArr = Uint8Array.from(Buffer.from(signedInfo));
 
+  const certificateDataNodeIndex = signedData.indexOf("<CertificateData>");
+  const documentTypeNodeIndex = certificateDataNodeIndex + 17 + 1;
+
+  // Data from 17 + 2 to next "space" or ">"
+  const documentType = signedData.slice(
+    documentTypeNodeIndex,
+    Math.min(
+      signedData.indexOf(" ", documentTypeNodeIndex),
+      signedData.indexOf(">", documentTypeNodeIndex),
+    ),
+  );
+
   const inputs = {
     dataPadded: Uint8ArrayToCharArray(signedDataPadded),
     dataPaddedLength: signedDataPaddedLength,
     signedInfo: Uint8ArrayToCharArray(signedInfoArr),
     dataHashIndex: dataHashIndex,
+    certificateDataNodeIndex: certificateDataNodeIndex,
+    documentTypeLength: documentType.length,
     signature: bigIntToChunkedBytes(signatureBigInt, 121, 17),
     pubKey: bigIntToChunkedBytes(pubKeyBigInt, 121, 17),
   };
 
-  return { inputs };
+  return { inputs, documentType };
 }
 
 describe("DigiLockerVerifier", function () {
@@ -136,10 +150,14 @@ describe("DigiLockerVerifier", function () {
   });
 
   it("should generate witness for circuit with Sha256RSA signature", async () => {
-    const { inputs } = await prepareTestData();
+    const { inputs, documentType } = await prepareTestData();
 
-    console.log(inputs);
+    const witness = await circuit.calculateWitness(inputs);
+    const documentTypeWitness = bigIntsToString([witness[1]]);
 
-    await circuit.calculateWitness(inputs);
+    assert(
+      documentTypeWitness == documentType,
+      `Document type mismatch: ${documentTypeWitness} != ${documentType}`,
+    );
   });
 });

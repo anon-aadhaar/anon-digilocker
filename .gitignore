@@ -11,3 +11,4 @@ artifacts
 sha256-var-circom
 artifacts/
 .env
+*.xml
