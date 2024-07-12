@@ -3,7 +3,6 @@ pragma circom 2.1.9;
 include "circomlib/circuits/bitify.circom";
 include "circomlib/circuits/poseidon.circom";
 include "@zk-email/circuits/lib/sha.circom";
-include "@zk-email/circuits/lib/rsa.circom";
 include "@zk-email/circuits/lib/base64.circom";
 include "@zk-email/circuits/utils/array.circom";
 include "../lib/sha1.circom";
@@ -61,13 +60,10 @@ template SignatureVerifier(n, k, maxDataLength) {
   signal signedInfoHash[160];
   signedInfoHash <== signedInfoHasher.out;
 
-  // Pad the SHA1 hash as per ASN1
-  component shaPadder = SHA1PadASN1(n);
-  shaPadder.sha1Hash <== signedInfoHash;
 
   // Verify RSA signature with padded SHA1 hash
-  component rsa = RSAVerifier65537(n, k);
-  rsa.message <== shaPadder.out;
+  component rsa = SHA1RSAVerifier(n, k);
+  rsa.sha1Hash <== signedInfoHash;
   rsa.modulus <== pubKey;
   rsa.signature <== signature;
 

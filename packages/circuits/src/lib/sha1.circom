@@ -2,6 +2,7 @@ pragma circom 2.1.9;
 
 include "sha1-circom/circuits/sha1.circom";
 include "circomlib/circuits/bitify.circom";
+include "@zk-email/circuits/lib/rsa.circom";
 
 
 template Sha1Bytes(maxByteLength) {
@@ -27,10 +28,10 @@ template Sha1Bytes(maxByteLength) {
 }
 
 
-template SHA1PadASN1(n) {
+template SHA1RSAPad(n) {
   var paddedLength = (2048 + n) \ n;
 
-  signal input sha1Hash[160];
+  signal input in[160];
   signal output out[paddedLength];
 
   // Pad SHA1 hash as input to RSA as per ASN1
@@ -48,7 +49,7 @@ template SHA1PadASN1(n) {
   for (var i = 0; i < n * paddedLength; i++) {
     // Set SHA1 output to the first 20 bytes
     if (i < 20 * 8) {
-      bitToNums[i \ n].in[i % n] <== sha1Hash[(20 * 8 - 1) - i];
+      bitToNums[i \ n].in[i % n] <== in[(20 * 8 - 1) - i];
     }
 
     // Set next 15 bytes to ASN1_PREFIX_SHA1
@@ -82,5 +83,38 @@ template SHA1PadASN1(n) {
 
   for (var i = 0; i < paddedLength; i++) {
     out[i] <== bitToNums[i].out;
+  }
+}
+
+
+// Based on https://github.com/zkemail/zk-email-verify/blob/main/packages/circuits/lib/rsa.circom
+template SHA1RSAVerifier(n, k) {
+  signal input sha1Hash[160];
+  signal input signature[k];
+  signal input modulus[k];
+
+  // Pad the SHA1 hash as per ASN1
+  component shaPadder = SHA1RSAPad(n);
+  shaPadder.in <== sha1Hash;
+
+  // Check that the signature is in proper form and reduced mod modulus.
+  component signatureRangeCheck[k];
+  component bigLessThan = BigLessThan(n, k);
+  for (var i = 0; i < k; i++) {
+      signatureRangeCheck[i] = Num2Bits(n);
+      signatureRangeCheck[i].in <== signature[i];
+      bigLessThan.a[i] <== signature[i];
+      bigLessThan.b[i] <== modulus[i];
+  }
+  bigLessThan.out === 1;
+
+  component bigPow = FpPow65537Mod(n, k);
+  for (var i = 0; i < k; i++) {
+      bigPow.base[i] <== signature[i];
+      bigPow.modulus[i] <== modulus[i];
+  }
+
+  for (var i = 0; i < k; i++) {
+      bigPow.out[i] === shaPadder.out[i];
   }
 }
