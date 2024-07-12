@@ -7,45 +7,45 @@ include "./helpers/extractor.circom";
 
 
 template DigiLockerVerifierTemplate(n, k, maxDataLength) {
-	var signedInfoMaxLength = 563;
+  var signedInfoMaxLength = 563;
 
-    signal input dataPadded[maxDataLength];
-    signal input dataPaddedLength;
-    signal input signedInfo[signedInfoMaxLength];
-    signal input dataHashIndex;
-    signal input certificateDataNodeIndex;
-    signal input documentTypeLength;
-    signal input signature[k];
-    signal input pubKey[k];
+  signal input dataPadded[maxDataLength];
+  signal input dataPaddedLength;
+  signal input signedInfo[signedInfoMaxLength];
+  signal input dataHashIndex;
+  signal input certificateDataNodeIndex;
+  signal input documentTypeLength;
+  signal input signature[k];
+  signal input pubKey[k];
 
-    signal output documentType;
-    signal output pubkeyHash;
-    
-
-    // Assert dataPaddedLength fit in maxDataLength
-    component n2bDataLength = Num2Bits(log2Ceil(maxDataLength));
-    n2bDataLength.in <== dataPaddedLength;
+  signal output documentType;
+  signal output pubkeyHash;
 
 
-    // Verify the RSA signature
-    component signatureVerifier = SignatureVerifier(n, k, maxDataLength);
-    signatureVerifier.dataPadded <== dataPadded;
-    signatureVerifier.dataPaddedLength <== dataPaddedLength;
-    signatureVerifier.signedInfo <== signedInfo;
-    signatureVerifier.dataHashIndex <== dataHashIndex;
-    signatureVerifier.pubKey <== pubKey;
-    signatureVerifier.signature <== signature;
-    pubkeyHash <== signatureVerifier.pubkeyHash;
+  // Assert dataPaddedLength fit in maxDataLength
+  component n2bDataLength = Num2Bits(log2Ceil(maxDataLength));
+  n2bDataLength.in <== dataPaddedLength;
 
 
-    // Extract
-    component extractor = Extractor(n, k, maxDataLength);
-    extractor.dataPadded <== dataPadded;
-    extractor.certificateDataNodeIndex <== certificateDataNodeIndex;
-    extractor.documentTypeLength <== documentTypeLength;
-    documentType <== extractor.documentType;
+  // Verify the RSA signature
+  component signatureVerifier = SignatureVerifier(n, k, maxDataLength);
+  signatureVerifier.dataPadded <== dataPadded;
+  signatureVerifier.dataPaddedLength <== dataPaddedLength;
+  signatureVerifier.signedInfo <== signedInfo;
+  signatureVerifier.dataHashIndex <== dataHashIndex;
+  signatureVerifier.pubKey <== pubKey;
+  signatureVerifier.signature <== signature;
+  pubkeyHash <== signatureVerifier.pubkeyHash;
 
 
-    // Assert data between dataPaddedLength and maxDataLength is zero
-    AssertZeroPadding(maxDataLength)(dataPadded, dataPaddedLength);
+  // Extract
+  component extractor = Extractor(n, k, maxDataLength);
+  extractor.dataPadded <== dataPadded;
+  extractor.certificateDataNodeIndex <== certificateDataNodeIndex;
+  extractor.documentTypeLength <== documentTypeLength;
+  documentType <== extractor.documentType;
+
+
+  // Assert data between dataPaddedLength and maxDataLength is zero
+  AssertZeroPadding(maxDataLength)(dataPadded, dataPaddedLength);
 }
