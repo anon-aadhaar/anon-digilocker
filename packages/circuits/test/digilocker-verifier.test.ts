@@ -149,7 +149,7 @@ describe("DigiLockerVerifier", function () {
     });
   });
 
-  it("should generate witness for circuit with Sha256RSA signature", async () => {
+  it("should verify the signature and extract type of the document", async () => {
     const { inputs, documentType } = await prepareTestData();
 
     const witness = await circuit.calculateWitness(inputs);
@@ -159,5 +159,7 @@ describe("DigiLockerVerifier", function () {
       documentTypeWitness == documentType,
       `Document type mismatch: ${documentTypeWitness} != ${documentType}`,
     );
+
+    console.log("Proof verifier for document: ", documentType);
   });
 });
