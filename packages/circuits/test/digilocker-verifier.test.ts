@@ -27,7 +27,7 @@ const xml = fs.readFileSync(
 );
 
 async function prepareTestData() {
-  const MAX_INPUT_LENGTH = 512 * 4;
+  const MAX_INPUT_LENGTH = 512 * 2; // Should be adjusted based in the <CertificateData> node length
 
   // Parse XML
   let doc = XmlDSigJs.Parse(xml);
@@ -116,16 +116,17 @@ async function prepareTestData() {
 
 
   // Extract <CertificateNode> and <DocumentType>
+  const signedDataAfterPrecomputeBuff = Buffer.from(signedDataAfterPrecompute);
   const signedInfoArr = Uint8Array.from(Buffer.from(signedInfo));
-  const certificateDataNodeIndex = signedData.indexOf("<CertificateData>");
+  const certificateDataNodeIndex = signedDataAfterPrecomputeBuff.indexOf(Buffer.from("<CertificateData>"));
   const documentTypeNodeIndex = certificateDataNodeIndex + 17 + 1;
 
   // Data from 17 + 2 to next "space" or ">"
-  const documentType = signedData.slice(
+  const documentType = signedDataAfterPrecomputeBuff.slice(
     documentTypeNodeIndex,
     Math.min(
-      signedDataAfterPrecompute.toString().indexOf(" ", documentTypeNodeIndex),
-      signedDataAfterPrecompute.toString().indexOf(">", documentTypeNodeIndex),
+      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(" "), documentTypeNodeIndex),
+      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(">"), documentTypeNodeIndex),
     ),
   );
 
@@ -171,11 +172,13 @@ describe("DigiLockerVerifier", function () {
   it("should verify the signature and extract document type", async () => {
     const { inputs, documentType } = await prepareTestData();
 
+    console.log(inputs);
+
     const witness = await circuit.calculateWitness(inputs);
     const documentTypeWitness = bigIntsToString([witness[1]]);
 
     assert(
-      documentTypeWitness == documentType,
+      documentTypeWitness == documentType.toString(),
       `Document type mismatch: ${documentTypeWitness} != ${documentType}`,
     );
 

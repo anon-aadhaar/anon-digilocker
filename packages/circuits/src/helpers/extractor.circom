@@ -13,10 +13,10 @@ template Extractor(n, k, maxDataLength) {
   signal output documentType;
 
   // Shift left till "<CertificateData>" node
-  component certificateDataNodeShifter = VarShiftLeft(maxDataLength, maxDataLength \ 2);
+  component certificateDataNodeShifter = VarShiftLeft(maxDataLength, maxDataLength);
   certificateDataNodeShifter.in <== dataPadded;
   certificateDataNodeShifter.shift <== certificateDataNodeIndex;
-  signal shitedData[maxDataLength \ 2] <== certificateDataNodeShifter.out;
+  signal shitedData[maxDataLength] <== certificateDataNodeShifter.out;
 
   // Assert first 17 bytes are "<CertificateData>"
   component certficateDataEquals[17];
@@ -28,7 +28,7 @@ template Extractor(n, k, maxDataLength) {
   }
 
   // Extract the document type - Starts from 18th bytes from "<CertificateData>"
-  component documentTypeSelector = SelectSubArray(maxDataLength \ 2, 32);
+  component documentTypeSelector = SelectSubArray(maxDataLength, 32);
   documentTypeSelector.in <== shitedData;
   documentTypeSelector.startIndex <== 17 + 1; // 17 bytes for "<CertificateData>" + 1 for a "<"
   documentTypeSelector.length <== documentTypeLength + 1; // Add 1 byte extra which would be " " or ">"
