@@ -13,6 +13,7 @@ template SignatureVerifier(n, k, maxDataLength) {
 
   signal input dataPadded[maxDataLength];
   signal input dataPaddedLength;
+  signal input precomputedSHA[32];
   signal input signedInfo[signedInfoMaxLength];
   signal input dataHashIndex;
   signal input signature[k];
@@ -22,9 +23,10 @@ template SignatureVerifier(n, k, maxDataLength) {
 
 
   // Hash the signed data
-  component dataHasher = Sha256Bytes(maxDataLength);
+  component dataHasher = Sha256BytesPartial(maxDataLength);
   dataHasher.paddedIn <== dataPadded;
   dataHasher.paddedInLength <== dataPaddedLength;
+  dataHasher.preHash <== precomputedSHA;
   signal dataHash[256];
   dataHash <== dataHasher.out;
 

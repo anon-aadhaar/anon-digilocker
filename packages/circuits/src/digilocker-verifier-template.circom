@@ -15,6 +15,7 @@ template DigiLockerVerifierTemplate(n, k, maxDataLength) {
   signal input dataHashIndex;
   signal input certificateDataNodeIndex;
   signal input documentTypeLength;
+  signal input precomputedSHA[32];
   signal input signature[k];
   signal input pubKey[k];
 
@@ -35,6 +36,8 @@ template DigiLockerVerifierTemplate(n, k, maxDataLength) {
   signatureVerifier.dataHashIndex <== dataHashIndex;
   signatureVerifier.pubKey <== pubKey;
   signatureVerifier.signature <== signature;
+  signatureVerifier.precomputedSHA <== precomputedSHA;
+  
   pubkeyHash <== signatureVerifier.pubkeyHash;
 
 
