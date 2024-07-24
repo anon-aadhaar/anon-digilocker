@@ -22,12 +22,16 @@ require("dotenv").config();
 XmlDSigJs.Application.setEngine("OpenSSL", globalThis.crypto);
 
 const xml = fs.readFileSync(
-  path.join(__dirname, "./test-data", "driving-license.xml"),
+  path.join(__dirname, "./test-data", "pan.xml"),
   "utf8",
 );
 
-async function prepareTestData() {
-  const MAX_INPUT_LENGTH = 512 * 2; // Should be adjusted based in the <CertificateData> node length
+async function prepareTestData(
+  params: { revealStart?: string; revealEnd?: string } = {},
+) {
+  const { revealStart, revealEnd } = params;
+
+  const MAX_INPUT_LENGTH = 512 * 3; // Should be adjusted based in the <CertificateData> node length
 
   // Parse XML
   let doc = XmlDSigJs.Parse(xml);
@@ -59,7 +63,8 @@ async function prepareTestData() {
 
   // Precompute SHA-256 hash of signed data till <CertificateData> node
   const signedDataUint8 = Uint8Array.from(Buffer.from(signedData));
-  const bodySHALength = Math.floor((signedDataUint8.length + 63 + 65) / 64) * 64;
+  const bodySHALength =
+    Math.floor((signedDataUint8.length + 63 + 65) / 64) * 64;
   const [signedDataPadded, signedDataPaddedLength] = sha256Pad(
     signedDataUint8,
     Math.max(MAX_INPUT_LENGTH, bodySHALength),
@@ -82,7 +87,6 @@ async function prepareTestData() {
     .textContent as string;
   const signatureBuff = Buffer.from(signatureB64, "base64");
   const signatureBigInt = BigInt("0x" + signatureBuff.toString("hex"));
-
 
   // ----- Local verification : Ensure data hash is present in SignedInfo and verify RSA
   const signedDataHaser = crypto.createHash("sha256");
@@ -109,27 +113,57 @@ async function prepareTestData() {
     "0x" + Buffer.from(publicKeyJWK.e!, "base64").toString("hex"),
   ); // 65537
 
-  const rsaResult = paddedMessageBigInt === signatureBigInt ** exponent % pubKeyBigInt;
+  const rsaResult =
+    paddedMessageBigInt === signatureBigInt ** exponent % pubKeyBigInt;
   assert(rsaResult, "Local: RSA verification failed");
 
   // ----- End Local verification
 
-
   // Extract <CertificateNode> and <DocumentType>
   const signedDataAfterPrecomputeBuff = Buffer.from(signedDataAfterPrecompute);
   const signedInfoArr = Uint8Array.from(Buffer.from(signedInfo));
-  const certificateDataNodeIndex = signedDataAfterPrecomputeBuff.indexOf(Buffer.from("<CertificateData>"));
+  const certificateDataNodeIndex = signedDataAfterPrecomputeBuff.indexOf(
+    Buffer.from("<CertificateData>"),
+  );
   const documentTypeNodeIndex = certificateDataNodeIndex + 17 + 1;
 
   // Data from 17 + 2 to next "space" or ">"
-  const documentType = signedDataAfterPrecomputeBuff.slice(
+  const documentType = signedDataAfterPrecomputeBuff.subarray(
     documentTypeNodeIndex,
     Math.min(
-      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(" "), documentTypeNodeIndex),
-      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(">"), documentTypeNodeIndex),
+      signedDataAfterPrecomputeBuff.indexOf(
+        Buffer.from(" "),
+        documentTypeNodeIndex,
+      ),
+      signedDataAfterPrecomputeBuff.indexOf(
+        Buffer.from(">"),
+        documentTypeNodeIndex,
+      ),
     ),
   );
 
+  let revealStartIndex = 0;
+  let revealEndIndex = 0;
+  const isRevealEnabled = revealStart && revealEnd ? 1 : 0;
+
+  if (isRevealEnabled) {
+    // Index of reveal start from "<CertificateData>"
+    revealStartIndex =
+      signedDataAfterPrecomputeBuff.indexOf(
+        Buffer.from(revealStart!),
+        certificateDataNodeIndex,
+      ) - certificateDataNodeIndex;
+
+    revealEndIndex =
+      signedDataAfterPrecomputeBuff.indexOf(
+        Buffer.from(revealEnd!),
+        certificateDataNodeIndex + revealStartIndex + revealStart!.length + 1,
+      ) - certificateDataNodeIndex;
+
+    if (revealStartIndex < 0) {
+      throw new Error("reveal start not found in doc");
+    }
+  }
 
   // Circuit inputs
   const inputs = {
@@ -142,11 +176,13 @@ async function prepareTestData() {
     documentTypeLength: documentType.length,
     signature: bigIntToChunkedBytes(signatureBigInt, 121, 17),
     pubKey: bigIntToChunkedBytes(pubKeyBigInt, 121, 17),
+    isRevealEnabled,
+    revealStartIndex,
+    revealEndIndex,
   };
 
-  return { inputs, documentType };
+  return { inputs, documentType, signedDataAfterPrecomputeBuff };
 }
-
 
 describe("DigiLockerVerifier", function () {
   this.timeout(0);
@@ -169,19 +205,49 @@ describe("DigiLockerVerifier", function () {
     });
   });
 
-  it("should verify the signature and extract document type", async () => {
+  it("should generate witness - verify XML signature", async () => {
+    const { inputs } = await prepareTestData();
+
+    await circuit.calculateWitness(inputs);
+  });
+
+  it("should extract document type", async () => {
     const { inputs, documentType } = await prepareTestData();
 
-    console.log(inputs);
-
     const witness = await circuit.calculateWitness(inputs);
-    const documentTypeWitness = bigIntsToString([witness[1]]);
+    const documentTypeWitness = bigIntsToString([witness[2]]);
 
     assert(
       documentTypeWitness == documentType.toString(),
       `Document type mismatch: ${documentTypeWitness} != ${documentType}`,
     );
 
+    assert(witness[3] === 0n, "reveal is not zero when not enabled");
+
     console.log("Witness generated for document: ", documentType);
+  });
+
+  it("should extract reveal bytes for PAN card", async () => {
+    // Extract `num="123123123"`
+    const { inputs, signedDataAfterPrecomputeBuff } = await prepareTestData({
+      revealStart: 'num="',
+      revealEnd: '"',
+    });
+
+    const str = signedDataAfterPrecomputeBuff.toString();
+    const expectedReveal = str.substring(
+      str.indexOf("num="),
+      str.indexOf("num=") + 4 + 10 + 1 + 1, // `num=` + `10 digits of PAN` + `"`
+    );
+
+    const witness = await circuit.calculateWitness(inputs);
+    const revealWitness = bigIntsToString([witness[3]]);
+
+    assert(
+      revealWitness == expectedReveal,
+      `Reveal bytes mismatch: ${revealWitness} != ${expectedReveal}`,
+    );
+
+    console.log("Witness genrated with data revealed : ", revealWitness);
   });
 });
