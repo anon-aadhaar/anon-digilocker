@@ -15,7 +15,8 @@ import {
   Uint8ArrayToCharArray,
   bigIntToChunkedBytes,
 } from "@zk-email/helpers/dist/binary-format";
-import { bigIntsToString } from "./util";
+import { bigIntsToString, bytesToIntChunks, padArrayWithZeros } from "./util";
+import { buildPoseidon } from "circomlibjs";
 
 require("dotenv").config();
 
@@ -179,9 +180,10 @@ async function prepareTestData(
     isRevealEnabled,
     revealStartIndex,
     revealEndIndex,
+    nullifierSeed: '123',
   };
 
-  return { inputs, documentType, signedDataAfterPrecomputeBuff };
+  return { inputs, documentType, signedDataAfterPrecomputeBuff, precomputedSha };
 }
 
 describe("DigiLockerVerifier", function () {
@@ -215,14 +217,14 @@ describe("DigiLockerVerifier", function () {
     const { inputs, documentType } = await prepareTestData();
 
     const witness = await circuit.calculateWitness(inputs);
-    const documentTypeWitness = bigIntsToString([witness[2]]);
+    const documentTypeWitness = bigIntsToString([witness[3]]);
 
     assert(
       documentTypeWitness == documentType.toString(),
       `Document type mismatch: ${documentTypeWitness} != ${documentType}`,
     );
 
-    assert(witness[3] === 0n, "reveal is not zero when not enabled");
+    assert(witness[4] === 0n, "reveal is not zero when not enabled");
 
     console.log("Witness generated for document: ", documentType);
   });
@@ -241,7 +243,7 @@ describe("DigiLockerVerifier", function () {
     );
 
     const witness = await circuit.calculateWitness(inputs);
-    const revealWitness = bigIntsToString([witness[3]]);
+    const revealWitness = bigIntsToString([witness[4]]);
 
     assert(
       revealWitness == expectedReveal,
@@ -249,5 +251,23 @@ describe("DigiLockerVerifier", function () {
     );
 
     console.log("Witness genrated with data revealed : ", revealWitness);
+  });
+
+  it.only("should calculate nullifier correctly", async () => {
+    const { inputs, precomputedSha } = await prepareTestData({
+      revealStart: 'num="',
+      revealEnd: '"',
+    });
+    
+    const witness = await circuit.calculateWitness(inputs);
+
+    const precomputedShaInt = bytesToIntChunks(new Uint8Array(precomputedSha), 31);
+
+    const poseidon = await buildPoseidon()
+    const first16 = poseidon([...precomputedSha.slice(0, 16)])
+    const last16 = poseidon([...precomputedSha.slice(16, 32)])
+    const nullifier = poseidon([Number(inputs.nullifierSeed), first16, last16])
+
+    assert(witness[2] == BigInt(poseidon.F.toString(nullifier)))
   });
 });

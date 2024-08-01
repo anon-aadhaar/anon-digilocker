@@ -4,6 +4,7 @@ include "circomlib/circuits/bitify.circom";
 include "circomlib/circuits/poseidon.circom";
 include "./helpers/constants.circom";
 include "./helpers/signature.circom";
+include "./helpers/nullifier.circom";
 include "./helpers/extractor.circom";
 
 
@@ -22,8 +23,10 @@ template DigiLockerVerifierTemplate(n, k, maxDataLength) {
   signal input isRevealEnabled;
   signal input revealStartIndex;
   signal input revealEndIndex;
+  signal input nullifierSeed;
 
   signal output pubkeyHash;
+  signal output nullifier;
   signal output documentType;
   signal output reveal;
 
@@ -31,6 +34,9 @@ template DigiLockerVerifierTemplate(n, k, maxDataLength) {
   // Assert dataPaddedLength fit in maxDataLength
   component n2bDataLength = Num2Bits(log2Ceil(maxDataLength));
   n2bDataLength.in <== dataPaddedLength;
+
+  // Assert data between dataPaddedLength and maxDataLength is zero
+  AssertZeroPadding(maxDataLength)(dataPadded, dataPaddedLength);
 
 
   // Verify the RSA signature
@@ -46,7 +52,7 @@ template DigiLockerVerifierTemplate(n, k, maxDataLength) {
   pubkeyHash <== signatureVerifier.pubkeyHash;
 
 
-  // Extract
+  // Extract and reveal
   component extractor = Extractor(n, k, maxDataLength);
   extractor.dataPadded <== dataPadded;
   extractor.certificateDataNodeIndex <== certificateDataNodeIndex;
@@ -57,7 +63,6 @@ template DigiLockerVerifierTemplate(n, k, maxDataLength) {
   documentType <== extractor.documentType;
   reveal <== extractor.reveal;
 
-
-  // Assert data between dataPaddedLength and maxDataLength is zero
-  AssertZeroPadding(maxDataLength)(dataPadded, dataPaddedLength);
+  // Calculate nullifier
+  nullifier <== Nullifier()(nullifierSeed, precomputedSHA);
 }
