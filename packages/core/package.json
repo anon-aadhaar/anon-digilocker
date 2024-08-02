@@ -1,0 +1,13 @@
+{
+  "name": "@anon-digilocker/core",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc ."
+  },
+  "dependencies": {
+    "@zk-email/helpers": "^6.1.2",
+    "xmldsigjs": "^2.5.1"
+  }
+}
