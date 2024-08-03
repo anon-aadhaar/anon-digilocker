@@ -6,8 +6,8 @@ interface IAnonDigiLocker {
         uint nullifierSeed,
         uint nullifier,
         uint documentType,
+        uint reveal,
         uint signal,
-        uint memory reveal,
         uint[8] memory groth16Proof
     ) external view returns (bool);
 }
