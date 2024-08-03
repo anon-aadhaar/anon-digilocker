@@ -151,8 +151,8 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
     signature: bigIntToChunkedBytes(signatureBigInt, rsaKeyBitsPerChunk, rsaKeyNumChunks),
     pubKey: bigIntToChunkedBytes(pubKeyBigInt, rsaKeyBitsPerChunk, rsaKeyNumChunks),
     isRevealEnabled,
-    revealStartIndex: revealStart?.toString(),
-    revealEndIndex: revealEndIndex?.toString(),
+    revealStartIndex: revealStartIndex.toString(),
+    revealEndIndex: revealEndIndex.toString(),
     nullifierSeed: nullifierSeed.toString(),
     signalHash: signalHash,
   };
