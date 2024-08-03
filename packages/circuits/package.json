@@ -10,11 +10,11 @@
     "format": "prettier --ignore-path ../../.prettierignore --write \"**/*.+(js|ts|json)\"",
     "lint": "echo 'no lint'",
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version",
-    "circuit:setup": "/bin/bash ./scripts/build.sh setup",
-    "circuit:gen-proof": "/bin/bash ./scripts/build.sh gen-proof",
-    "circuit:gen-witness": "/bin/bash ./scripts/build.sh gen-witness",
-    "circuit:gen-contract": "/bin/bash ./scripts/build.sh gen-contract",
-    "circuit:verify-proof": "/bin/bash ./scripts/build.sh verify-proof"
+    "trusted-setup": "/bin/bash ./scripts/build.sh setup",
+    "gen-proof": "/bin/bash ./scripts/build.sh gen-proof",
+    "gen-witness": "/bin/bash ./scripts/build.sh gen-witness",
+    "gen-contract": "/bin/bash ./scripts/build.sh gen-contract",
+    "verify-proof": "/bin/bash ./scripts/build.sh verify-proof"
   },
   "dependencies": {
     "@anon-digilocker/core": "workspace:^",
