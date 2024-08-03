@@ -136,6 +136,9 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
     }
   }
 
+  // Set signal to 1 by default if no signal is set
+  const signalHash = params.signal ? hash(params.signal) : hash(1);
+
   // Circuit inputs
   const inputs = {
     dataPadded: Uint8ArrayToCharArray(signedDataAfterPrecompute),
@@ -151,6 +154,7 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
     revealStartIndex: revealStart?.toString(),
     revealEndIndex: revealEndIndex?.toString(),
     nullifierSeed: nullifierSeed.toString(),
+    signalHash: signalHash,
   };
 
   return inputs;
@@ -159,8 +163,6 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
 export const generateArgs = async (xml: string, params: InputGenerationParams): Promise<AnonDigiLockerArgs> => {
   const inputs = await generateInput(xml, params);
 
-  // Set signal to 1 by default if no signal is set
-  const signalHash = params.signal ? hash(params.signal) : hash(1);
 
   const anonDigiLockerArgs: AnonDigiLockerArgs = {
     dataPadded: {
@@ -217,7 +219,7 @@ export const generateArgs = async (xml: string, params: InputGenerationParams): 
     },
     signalHash: {
       argumentType: ArgumentTypeName.String,
-      value: signalHash,
+      value: inputs.signalHash,
     },
   };
 
