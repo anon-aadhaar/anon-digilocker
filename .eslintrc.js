@@ -22,6 +22,7 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': 'error',
     'react/react-in-jsx-scope': 'off',
     'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
+    '@typescript-eslint/ban-ts-comment' : 'off'
   },
   ignorePatterns: ['build', 'script/*.mjs', 'dist', 'mocha.cjs'],
   settings: {

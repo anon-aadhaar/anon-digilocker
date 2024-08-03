@@ -24,9 +24,9 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
   }
 
   // Parse XML
-  let doc = XmlDSigJs.Parse(xml);
-  let signature = doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
-  let signedXml = new XmlDSigJs.SignedXml(doc);
+  const doc = XmlDSigJs.Parse(xml);
+  const signature = doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
+  const signedXml = new XmlDSigJs.SignedXml(doc);
   signedXml.LoadXml(signature[0]);
 
   // Extract public key from the XML
