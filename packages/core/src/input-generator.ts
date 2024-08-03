@@ -3,17 +3,11 @@ import XmlDSigJs from "xmldsigjs";
 import { sha256Pad, generatePartialSHA } from "@zk-email/helpers/dist/sha-utils";
 import { Uint8ArrayToCharArray, bigIntToChunkedBytes } from "@zk-email/helpers/dist/binary-format";
 import { CIRCOM_FIELD_P } from "./constants";
+import { InputGenerationParams, AnonDigiLockerArgs } from "./types";
+import { ArgumentTypeName } from "@pcd/pcd-types";
+import { hash } from "./hash";
 
 XmlDSigJs.Application.setEngine("OpenSSL", globalThis.crypto);
-
-type InputGenerationParams = {
-  nullifierSeed: number | bigint;
-  revealStart?: string;
-  revealEnd?: string;
-  maxInputLength?: number;
-  rsaKeyBitsPerChunk?: number;
-  rsaKeyNumChunks?: number;
-};
 
 export async function generateInput(xml: string, params: InputGenerationParams) {
   const {
@@ -145,19 +139,87 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
   // Circuit inputs
   const inputs = {
     dataPadded: Uint8ArrayToCharArray(signedDataAfterPrecompute),
-    dataPaddedLength: signedDataAfterPrecomputeLength,
+    dataPaddedLength: signedDataAfterPrecomputeLength.toString(),
     signedInfo: Uint8ArrayToCharArray(signedInfoArr),
     precomputedSHA: Uint8ArrayToCharArray(precomputedSha),
-    dataHashIndex: dataHashIndex,
-    certificateDataNodeIndex: certificateDataNodeIndex,
-    documentTypeLength: documentType.length,
+    dataHashIndex: dataHashIndex.toString(),
+    certificateDataNodeIndex: certificateDataNodeIndex.toString(),
+    documentTypeLength: documentType.length.toString(),
     signature: bigIntToChunkedBytes(signatureBigInt, rsaKeyBitsPerChunk, rsaKeyNumChunks),
     pubKey: bigIntToChunkedBytes(pubKeyBigInt, rsaKeyBitsPerChunk, rsaKeyNumChunks),
     isRevealEnabled,
-    revealStartIndex,
-    revealEndIndex,
+    revealStartIndex: revealStart?.toString(),
+    revealEndIndex: revealEndIndex?.toString(),
     nullifierSeed: nullifierSeed.toString(),
   };
 
   return inputs;
 }
+
+export const generateArgs = async (xml: string, params: InputGenerationParams): Promise<AnonDigiLockerArgs> => {
+  const inputs = await generateInput(xml, params);
+
+  // Set signal to 1 by default if no signal is set
+  const signalHash = params.signal ? hash(params.signal) : hash(1);
+
+  const anonDigiLockerArgs: AnonDigiLockerArgs = {
+    dataPadded: {
+      argumentType: ArgumentTypeName.StringArray,
+      value: inputs.dataPadded,
+    },
+    dataPaddedLength: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.dataPaddedLength,
+    },
+    signedInfo: {
+      argumentType: ArgumentTypeName.StringArray,
+      value: inputs.signedInfo,
+    },
+    precomputedSHA: {
+      argumentType: ArgumentTypeName.StringArray,
+      value: inputs.precomputedSHA,
+    },
+    dataHashIndex: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.dataHashIndex,
+    },
+    certificateDataNodeIndex: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.certificateDataNodeIndex,
+    },
+    documentTypeLength: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.documentTypeLength,
+    },
+    signature: {
+      argumentType: ArgumentTypeName.StringArray,
+      value: inputs.signature,
+    },
+    pubKey: {
+      argumentType: ArgumentTypeName.StringArray,
+      value: inputs.pubKey,
+    },
+    isRevealEnabled: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.isRevealEnabled ? "1" : "0",
+    },
+    revealStartIndex: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.revealStartIndex,
+    },
+    revealEndIndex: {
+      argumentType: ArgumentTypeName.Number,
+      value: inputs.revealEndIndex,
+    },
+    nullifierSeed: {
+      argumentType: ArgumentTypeName.String,
+      value: inputs.nullifierSeed,
+    },
+    signalHash: {
+      argumentType: ArgumentTypeName.String,
+      value: signalHash,
+    },
+  };
+
+  return anonDigiLockerArgs;
+};

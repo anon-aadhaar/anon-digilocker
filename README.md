@@ -4,7 +4,7 @@ Anon DigiLocker is a protocol for proving ownership of identity documents in Dig
 
 We create Zero Knowledge Proof of signed XML documents from DigiLocker. Proof generation happens entirely on the browser meaning no data has to be sent to a server. The proof can be verified on-chain and off-chain.
 
-It is recommended to use this alongside [Anon AaDhaar](https://github.com/anon-aadhaar/anon-aadhaar)
+It is recommended to use this alongside [Anon Aadhaar](https://github.com/anon-aadhaar/anon-aadhaar)
 
 <br />
 
@@ -113,7 +113,7 @@ You can also generate the solidity verifier contract using `yarn gen-contract` a
 ## Our Community
 
 - PSE Discord server: <a href="https://discord.com/invite/sF5CT5rzrR"><img src="https://img.shields.io/badge/discord-pse-blue"></a>
-- Twitter account: <a href="https://twitter.com/AnonAadhaar"><img src="https://img.shields.io/twitter/follow/Anon_Aadhaar?style=flat-square&logo=twitter"></a>
+- Twitter account: <a href="https://twitter.com/AnonDigiLocker"><img src="https://img.shields.io/twitter/follow/Anon_Aadhaar?style=flat-square&logo=twitter"></a>
 - Telegram group: <a href="https://t.me/anon_aadhaar"><img src="https://img.shields.io/badge/telegram-@anon_aadhaar-blue.svg?style=flat-square&logo=telegram"></a>
 
 Please join our Telegram group to receive updates, ask questions, get support with integration, etc.
