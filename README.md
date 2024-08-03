@@ -88,6 +88,8 @@ XML_PATH=test/test-data/pan.xml REVEAL_START='num="' REVEAL_END='"' NULLIFIER_SE
 #### Generate Proof
 
 ```sh
+# PWD = packages/circuits
+
 yarn gen-proof
 ```
 
@@ -96,6 +98,8 @@ This will generate and save the proof to `packages/circuits/build/proofs/proof.j
 
 #### Verify the proof
 ```sh
+# PWD = packages/circuits
+
 yarn verify-proof
 ```
 This will verify the generated proof and print the result to the console.
