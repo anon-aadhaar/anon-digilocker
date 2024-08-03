@@ -2,11 +2,32 @@ import crypto from "crypto";
 import XmlDSigJs from "xmldsigjs";
 import { sha256Pad, generatePartialSHA } from "@zk-email/helpers/dist/sha-utils";
 import { Uint8ArrayToCharArray, bigIntToChunkedBytes } from "@zk-email/helpers/dist/binary-format";
+import { CIRCOM_FIELD_P } from "./constants";
 
 XmlDSigJs.Application.setEngine("OpenSSL", globalThis.crypto);
 
-export async function generateInput(xml: string, revealStart?: string, revealEnd?: string) {
-  const MAX_INPUT_LENGTH = 512 * 3; // Should be adjusted based in the <CertificateData> node length
+type InputGenerationParams = {
+  nullifierSeed: number | bigint;
+  revealStart?: string;
+  revealEnd?: string;
+  maxInputLength?: number;
+  rsaKeyBitsPerChunk?: number;
+  rsaKeyNumChunks?: number;
+};
+
+export async function generateInput(xml: string, params: InputGenerationParams) {
+  const {
+    nullifierSeed,
+    revealStart,
+    revealEnd,
+    maxInputLength = 64 * 20,
+    rsaKeyBitsPerChunk = 121,
+    rsaKeyNumChunks = 17,
+  } = params;
+
+  if (BigInt(nullifierSeed) > CIRCOM_FIELD_P) {
+    throw new Error("Nullifier seed is larger than the max field size");
+  }
 
   // Parse XML
   let doc = XmlDSigJs.Parse(xml);
@@ -33,7 +54,7 @@ export async function generateInput(xml: string, revealStart?: string, revealEnd
   const bodySHALength = Math.floor((signedDataUint8.length + 63 + 65) / 64) * 64;
   const [signedDataPadded, signedDataPaddedLength] = sha256Pad(
     signedDataUint8,
-    Math.max(MAX_INPUT_LENGTH, bodySHALength),
+    Math.max(maxInputLength, bodySHALength),
   );
   const {
     bodyRemaining: signedDataAfterPrecompute,
@@ -43,7 +64,7 @@ export async function generateInput(xml: string, revealStart?: string, revealEnd
     body: signedDataPadded,
     bodyLength: signedDataPaddedLength,
     selectorString: "<CertificateData>", // String to split the body
-    maxRemainingBodyLength: MAX_INPUT_LENGTH,
+    maxRemainingBodyLength: maxInputLength,
   });
 
   // Extract SignedInfo node and signature
@@ -130,12 +151,12 @@ export async function generateInput(xml: string, revealStart?: string, revealEnd
     dataHashIndex: dataHashIndex,
     certificateDataNodeIndex: certificateDataNodeIndex,
     documentTypeLength: documentType.length,
-    signature: bigIntToChunkedBytes(signatureBigInt, 121, 17),
-    pubKey: bigIntToChunkedBytes(pubKeyBigInt, 121, 17),
+    signature: bigIntToChunkedBytes(signatureBigInt, rsaKeyBitsPerChunk, rsaKeyNumChunks),
+    pubKey: bigIntToChunkedBytes(pubKeyBigInt, rsaKeyBitsPerChunk, rsaKeyNumChunks),
     isRevealEnabled,
     revealStartIndex,
     revealEndIndex,
-    nullifierSeed: "123",
+    nullifierSeed: nullifierSeed.toString(),
   };
 
   return inputs;
