@@ -5,6 +5,9 @@
   "main": "index.js",
   "private": true,
   "license": "MIT",
+  "scripts": {
+    "format": "yarn workspaces foreach -A run format"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/anon-aadhaar/anon-digilocker.git"

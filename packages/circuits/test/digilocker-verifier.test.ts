@@ -4,17 +4,11 @@ const circom_tester = require("circom_tester/wasm/tester");
 
 import path from "path";
 import assert from "assert";
-import {
-  sha256Pad,
-  generatePartialSHA,
-} from "@zk-email/helpers/dist/sha-utils";
+import { sha256Pad, generatePartialSHA } from "@zk-email/helpers/dist/sha-utils";
 import fs from "fs";
 import crypto from "crypto";
 import XmlDSigJs from "xmldsigjs";
-import {
-  Uint8ArrayToCharArray,
-  bigIntToChunkedBytes,
-} from "@zk-email/helpers/dist/binary-format";
+import { Uint8ArrayToCharArray, bigIntToChunkedBytes } from "@zk-email/helpers/dist/binary-format";
 import { bigIntsToString, bytesToIntChunks, padArrayWithZeros } from "./util";
 import { buildPoseidon } from "circomlibjs";
 
@@ -22,24 +16,16 @@ require("dotenv").config();
 
 XmlDSigJs.Application.setEngine("OpenSSL", globalThis.crypto);
 
-const xml = fs.readFileSync(
-  path.join(__dirname, "./test-data", "pan.xml"),
-  "utf8",
-);
+const xml = fs.readFileSync(path.join(__dirname, "./test-data", "pan.xml"), "utf8");
 
-async function prepareTestData(
-  params: { revealStart?: string; revealEnd?: string } = {},
-) {
+async function prepareTestData(params: { revealStart?: string; revealEnd?: string } = {}) {
   const { revealStart, revealEnd } = params;
 
   const MAX_INPUT_LENGTH = 512 * 3; // Should be adjusted based in the <CertificateData> node length
 
   // Parse XML
   let doc = XmlDSigJs.Parse(xml);
-  let signature = doc.getElementsByTagNameNS(
-    "http://www.w3.org/2000/09/xmldsig#",
-    "Signature",
-  );
+  let signature = doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
   let signedXml = new XmlDSigJs.SignedXml(doc);
   signedXml.LoadXml(signature[0]);
 
@@ -47,9 +33,7 @@ async function prepareTestData(
   // @ts-ignore
   const publicKey = (await signedXml.GetPublicKeys())[0];
   const publicKeyJWK = await crypto.subtle.exportKey("jwk", publicKey);
-  const pubKeyBigInt = BigInt(
-    "0x" + Buffer.from(publicKeyJWK.n as string, "base64").toString("hex"),
-  );
+  const pubKeyBigInt = BigInt("0x" + Buffer.from(publicKeyJWK.n as string, "base64").toString("hex"));
 
   // Get the signed data
   const references = signedXml.XmlSignature.SignedInfo.References.GetIterator();
@@ -57,15 +41,11 @@ async function prepareTestData(
     throw new Error("XML should have exactly one reference");
   }
   // @ts-ignore
-  const signedData: string = signedXml.ApplyTransforms(
-    references[0].Transforms,
-    doc.documentElement,
-  );
+  const signedData: string = signedXml.ApplyTransforms(references[0].Transforms, doc.documentElement);
 
   // Precompute SHA-256 hash of signed data till <CertificateData> node
   const signedDataUint8 = Uint8Array.from(Buffer.from(signedData));
-  const bodySHALength =
-    Math.floor((signedDataUint8.length + 63 + 65) / 64) * 64;
+  const bodySHALength = Math.floor((signedDataUint8.length + 63 + 65) / 64) * 64;
   const [signedDataPadded, signedDataPaddedLength] = sha256Pad(
     signedDataUint8,
     Math.max(MAX_INPUT_LENGTH, bodySHALength),
@@ -84,8 +64,7 @@ async function prepareTestData(
   // Extract SignedInfo node and signature
   // @ts-ignore
   const signedInfo = signedXml.TransformSignedInfo(signedXml);
-  const signatureB64 = signature[0].getElementsByTagName("SignatureValue")[0]
-    .textContent as string;
+  const signatureB64 = signature[0].getElementsByTagName("SignatureValue")[0].textContent as string;
   const signatureBuff = Buffer.from(signatureB64, "base64");
   const signatureBigInt = BigInt("0x" + signatureBuff.toString("hex"));
 
@@ -110,12 +89,9 @@ async function prepareTestData(
     hashWithPrefx,
   ]);
   const paddedMessageBigInt = BigInt("0x" + paddedMessage.toString("hex"));
-  const exponent = BigInt(
-    "0x" + Buffer.from(publicKeyJWK.e!, "base64").toString("hex"),
-  ); // 65537
+  const exponent = BigInt("0x" + Buffer.from(publicKeyJWK.e!, "base64").toString("hex")); // 65537
 
-  const rsaResult =
-    paddedMessageBigInt === signatureBigInt ** exponent % pubKeyBigInt;
+  const rsaResult = paddedMessageBigInt === signatureBigInt ** exponent % pubKeyBigInt;
   assert(rsaResult, "Local: RSA verification failed");
 
   // ----- End Local verification
@@ -123,23 +99,15 @@ async function prepareTestData(
   // Extract <CertificateNode> and <DocumentType>
   const signedDataAfterPrecomputeBuff = Buffer.from(signedDataAfterPrecompute);
   const signedInfoArr = Uint8Array.from(Buffer.from(signedInfo));
-  const certificateDataNodeIndex = signedDataAfterPrecomputeBuff.indexOf(
-    Buffer.from("<CertificateData>"),
-  );
+  const certificateDataNodeIndex = signedDataAfterPrecomputeBuff.indexOf(Buffer.from("<CertificateData>"));
   const documentTypeNodeIndex = certificateDataNodeIndex + 17 + 1;
 
   // Data from 17 + 2 to next "space" or ">"
   const documentType = signedDataAfterPrecomputeBuff.subarray(
     documentTypeNodeIndex,
     Math.min(
-      signedDataAfterPrecomputeBuff.indexOf(
-        Buffer.from(" "),
-        documentTypeNodeIndex,
-      ),
-      signedDataAfterPrecomputeBuff.indexOf(
-        Buffer.from(">"),
-        documentTypeNodeIndex,
-      ),
+      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(" "), documentTypeNodeIndex),
+      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(">"), documentTypeNodeIndex),
     ),
   );
 
@@ -150,10 +118,8 @@ async function prepareTestData(
   if (isRevealEnabled) {
     // Index of reveal start from "<CertificateData>"
     revealStartIndex =
-      signedDataAfterPrecomputeBuff.indexOf(
-        Buffer.from(revealStart!),
-        certificateDataNodeIndex,
-      ) - certificateDataNodeIndex;
+      signedDataAfterPrecomputeBuff.indexOf(Buffer.from(revealStart!), certificateDataNodeIndex) -
+      certificateDataNodeIndex;
 
     revealEndIndex =
       signedDataAfterPrecomputeBuff.indexOf(
@@ -180,7 +146,7 @@ async function prepareTestData(
     isRevealEnabled,
     revealStartIndex,
     revealEndIndex,
-    nullifierSeed: '123',
+    nullifierSeed: "123",
   };
 
   return { inputs, documentType, signedDataAfterPrecomputeBuff, precomputedSha };
@@ -189,21 +155,14 @@ async function prepareTestData(
 describe("DigiLockerVerifier", function () {
   this.timeout(0);
 
-  let circuit: any;
+  let any;
 
   this.beforeAll(async () => {
-    const pathToCircuit = path.join(
-      __dirname,
-      "../src",
-      "digilocker-verifier.circom",
-    );
+    const pathToCircuit = path.join(__dirname, "../src", "digilocker-verifier.circom");
     circuit = await circom_tester(pathToCircuit, {
       recompile: true,
       // output: path.join(__dirname, '../build'),
-    include: [
-        path.join(__dirname, "../node_modules"),
-        path.join(__dirname, "../../../node_modules"),
-      ],
+      include: [path.join(__dirname, "../node_modules"), path.join(__dirname, "../../../node_modules")],
     });
   });
 
@@ -245,10 +204,7 @@ describe("DigiLockerVerifier", function () {
     const witness = await circuit.calculateWitness(inputs);
     const revealWitness = bigIntsToString([witness[4]]);
 
-    assert(
-      revealWitness == expectedReveal,
-      `Reveal bytes mismatch: ${revealWitness} != ${expectedReveal}`,
-    );
+    assert(revealWitness == expectedReveal, `Reveal bytes mismatch: ${revealWitness} != ${expectedReveal}`);
 
     console.log("Witness genrated with data revealed : ", revealWitness);
   });
@@ -258,16 +214,16 @@ describe("DigiLockerVerifier", function () {
       revealStart: 'num="',
       revealEnd: '"',
     });
-    
+
     const witness = await circuit.calculateWitness(inputs);
 
     const precomputedShaInt = bytesToIntChunks(new Uint8Array(precomputedSha), 31);
 
-    const poseidon = await buildPoseidon()
-    const first16 = poseidon([...precomputedSha.slice(0, 16)])
-    const last16 = poseidon([...precomputedSha.slice(16, 32)])
-    const nullifier = poseidon([Number(inputs.nullifierSeed), first16, last16])
+    const poseidon = await buildPoseidon();
+    const first16 = poseidon([...precomputedSha.slice(0, 16)]);
+    const last16 = poseidon([...precomputedSha.slice(16, 32)]);
+    const nullifier = poseidon([Number(inputs.nullifierSeed), first16, last16]);
 
-    assert(witness[2] == BigInt(poseidon.F.toString(nullifier)))
+    assert(witness[2] == BigInt(poseidon.F.toString(nullifier)));
   });
 });
