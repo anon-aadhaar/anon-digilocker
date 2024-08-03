@@ -155,7 +155,7 @@ async function prepareTestData(params: { revealStart?: string; revealEnd?: strin
 describe("DigiLockerVerifier", function () {
   this.timeout(0);
 
-  let any;
+  let circuit: any;
 
   this.beforeAll(async () => {
     const pathToCircuit = path.join(__dirname, "../src", "digilocker-verifier.circom");
@@ -209,7 +209,7 @@ describe("DigiLockerVerifier", function () {
     console.log("Witness genrated with data revealed : ", revealWitness);
   });
 
-  it.only("should calculate nullifier correctly", async () => {
+  it("should calculate nullifier correctly", async () => {
     const { inputs, precomputedSha } = await prepareTestData({
       revealStart: 'num="',
       revealEnd: '"',
