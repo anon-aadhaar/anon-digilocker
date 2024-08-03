@@ -34,6 +34,7 @@ __metadata:
   resolution: "@anon-digilocker/core@workspace:packages/core"
   dependencies:
     "@zk-email/helpers": "npm:^6.1.2"
+    snarkjs: "npm:^0.7.4"
     xmldsigjs: "npm:^2.5.1"
   languageName: unknown
   linkType: soft
