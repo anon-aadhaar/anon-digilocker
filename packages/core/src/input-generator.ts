@@ -1,20 +1,20 @@
-import crypto from "crypto";
-import XmlDSigJs from "xmldsigjs";
+// import crypto from "crypto";
+import { Application, Parse, SignedXml } from "xmldsigjs";
 import { sha256Pad, generatePartialSHA } from "@zk-email/helpers/dist/sha-utils";
+import { ArgumentTypeName } from "@pcd/pcd-types";
 import { Uint8ArrayToCharArray, bigIntToChunkedBytes } from "@zk-email/helpers/dist/binary-format";
 import { CIRCOM_FIELD_P } from "./constants";
 import { InputGenerationParams, AnonDigiLockerArgs } from "./types";
-import { ArgumentTypeName } from "@pcd/pcd-types";
 import { hash } from "./hash";
 
-XmlDSigJs.Application.setEngine("OpenSSL", globalThis.crypto);
+Application.setEngine("OpenSSL", globalThis.crypto);
 
 export async function generateInput(xml: string, params: InputGenerationParams) {
   const {
     nullifierSeed,
     revealStart,
     revealEnd,
-    maxInputLength = 64 * 20,
+    maxInputLength = 512 * 3,
     rsaKeyBitsPerChunk = 121,
     rsaKeyNumChunks = 17,
   } = params;
@@ -24,15 +24,15 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
   }
 
   // Parse XML
-  const doc = XmlDSigJs.Parse(xml);
+  const doc = Parse(xml);
   const signature = doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
-  const signedXml = new XmlDSigJs.SignedXml(doc);
+  const signedXml = new SignedXml(doc);
   signedXml.LoadXml(signature[0]);
 
   // Extract public key from the XML
   // @ts-ignore
   const publicKey = (await signedXml.GetPublicKeys())[0];
-  const publicKeyJWK = await crypto.subtle.exportKey("jwk", publicKey);
+  const publicKeyJWK = await globalThis.crypto.subtle.exportKey("jwk", publicKey);
   const pubKeyBigInt = BigInt("0x" + Buffer.from(publicKeyJWK.n as string, "base64").toString("hex"));
 
   // Get the signed data
@@ -64,26 +64,29 @@ export async function generateInput(xml: string, params: InputGenerationParams) 
   // Extract SignedInfo node and signature
   // @ts-ignore
   const signedInfo = signedXml.TransformSignedInfo(signedXml);
-  const signatureB64 = signature[0].getElementsByTagName("SignatureValue")[0].textContent as string;
-  const signatureBuff = Buffer.from(signatureB64, "base64");
+  // @ts-ignore
+  const signatureBuff = Buffer.from(signedXml.signature.SignatureValue);
   const signatureBigInt = BigInt("0x" + signatureBuff.toString("hex"));
 
   // ----- Local verification
   // Ensure data hash is present in SignedInfo and verify RSA
-  const signedDataHaser = crypto.createHash("sha256");
-  signedDataHaser.update(signedData);
-  const signedDataHash = signedDataHaser.digest("base64");
+  // const signedDataHaser = crypto.createHash("sha256");
+  // signedDataHaser.update(signedData);
+  // const signedDataHash = signedDataHaser.digest("base64");
+  const signedDataHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(signedData));
+  const signedDataHashB64 = Buffer.from(signedDataHash).toString("base64");
 
-  const dataHashIndex = signedInfo.indexOf(signedDataHash);
+  const dataHashIndex = signedInfo.indexOf(signedDataHashB64);
   if (dataHashIndex === -1) {
     throw new Error("Body hash not found SignedInfo");
   }
 
-  const sha1 = crypto.createHash("sha1");
-  sha1.update(Buffer.from(signedInfo));
+  // const sha1 = crypto.createHash("sha1");
+  // sha1.update(Buffer.from(signedInfo));
+  const sha1 = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(signedInfo));
 
   const ASN1_PREFIX_SHA1 = Buffer.from("3021300906052b0e03021a05000414", "hex");
-  const hashWithPrefx = Buffer.concat([ASN1_PREFIX_SHA1, sha1.digest()]);
+  const hashWithPrefx = Buffer.concat([ASN1_PREFIX_SHA1, Buffer.from(sha1)]);
   const paddingLength = 256 - hashWithPrefx.length - 3; // = 218; 3 bytes for 0x00 and 0x01 and 0x00
   const paddedMessage = Buffer.concat([
     Buffer.from([0x00, 0x01]),
