@@ -12,3 +12,5 @@ sha256-var-circom
 artifacts/
 .env
 *.xml
+.yarn
+.parcel-cache
