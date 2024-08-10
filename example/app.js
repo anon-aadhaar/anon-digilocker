@@ -25,8 +25,6 @@ export function App() {
       maxInputLength: 512 * 3
     });
 
-    console.log(inputs);
-
     setStatus("Generating proof...");
 
     const proof = await groth16.fullProve(
@@ -38,6 +36,15 @@ export function App() {
 
     console.log(proof);
 
+    setStatus("Verifying proof...");
+
+    const result = await groth16.verify(
+      await fetch("http://127.0.0.1:8080/vkey.json").then((res) => res.json()),
+      proof.publicSignals,
+      proof.proof
+    );
+
+    setStatus(result ? "Proof verified" : "Proof failed");
   }
 
   return (
