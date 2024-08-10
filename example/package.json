@@ -1,28 +1,25 @@
 {
-  "name": "example",
+  "name": "anon-digilocker-example",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "dev": "parcel index.html --watch"
+    "dev": "vite"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "constants-browserify": "^1.0.0",
-    "crypto-browserify": "^3.12.0",
-    "events": "^3.1.0",
-    "os-browserify": "^0.3.0",
-    "parcel": "^2.12.0",
-    "path-browserify": "^1.0.0",
-    "process": "^0.11.10",
-    "stream-browserify": "^3.0.0",
-    "vm-browserify": "^1.1.2"
+    "@vitejs/plugin-react": "^4.3.1",
+    "sass-embedded": "^1.77.8",
+    "vite": "^5.4.0"
   },
   "dependencies": {
     "@anon-digilocker/core": "file:../packages/core",
+    "buffer": "^6.0.3",
+    "prismjs": "^1.29.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-simple-code-editor": "^0.14.1",
+    "snarkjs": "0.7.4"
   }
 }
