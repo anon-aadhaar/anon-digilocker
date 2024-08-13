@@ -11,14 +11,15 @@ import "prismjs/components/prism-clike";
 import "prismjs/components/prism-xml-doc";
 import "prismjs/themes/prism.css";
 
-const ARTIFACTS_URL = "http://127.0.0.1:8080";
+const artifactsUrl = import.meta.env.VITE_ARTIFACTS_URL;
 
 export function App() {
   const [xmlContent, setXmlContent] = React.useState(``);
-  const [status, setStatus] = React.useState("Ready");
+  const [status, setStatus] = React.useState("");
   const [showModal, setShowModal] = React.useState(false);
-  const [revealStart, setRevealStart] = React.useState(0);
-  const [revealEnd, setRevealEnd] = React.useState(0);
+  const [revealStart, setRevealStart] = React.useState(`num="`);
+  const [revealEnd, setRevealEnd] = React.useState(`"`);
+  const [proof, setProof] = React.useState();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -34,7 +35,8 @@ export function App() {
 
       setStatus("Generating input...");
 
-      const inputs = await generateInput(xmlContent, {
+      const cleanXml = xmlContent.replace("\n", "").trim();
+      const inputs = await generateInput(cleanXml, {
         nullifierSeed,
         revealStart,
         revealEnd,
@@ -43,24 +45,28 @@ export function App() {
 
       setStatus("Generating proof...");
 
-      const proof = await groth16.fullProve(
+      const fullProof = await groth16.fullProve(
         inputs,
-        `${ARTIFACTS_URL}/digilocker-verifier.wasm`,
-        `${ARTIFACTS_URL}/circuit_final.zkey`,
+        `${artifactsUrl}digilocker-verifier.wasm`,
+        `${artifactsUrl}circuit_final.zkey`,
         console,
       );
 
-      console.log(proof);
+      console.log(fullProof);
 
       setStatus("Verifying proof...");
 
       const result = await groth16.verify(
-        await fetch(`${ARTIFACTS_URL}/vkey.json`).then((res) => res.json()),
-        proof.publicSignals,
-        proof.proof,
+        await fetch(`${artifactsUrl}vkey.json`).then((res) => res.json()),
+        fullProof.publicSignals,
+        fullProof.proof,
       );
 
       setStatus(result ? "Proof verified" : "Proof failed");
+
+      if (result) {
+        setProof(fullProof);
+      }
     } catch (e) {
       setStatus(`Error: ${e.message}`);
     } finally {
@@ -70,7 +76,7 @@ export function App() {
 
   let revealString = "";
   let revealError = "";
-  if (revealStart && revealEnd) {
+  if (xmlContent && revealStart && revealEnd) {
     const certificateDataIndex = xmlContent.indexOf("<CertificateData>");
     const revealStartIndex = xmlContent.indexOf(revealStart, certificateDataIndex);
     const revealEndIndex = xmlContent.indexOf(revealEnd, revealStartIndex + revealStart.length + 1);
@@ -88,7 +94,7 @@ export function App() {
 
   return (
     // eslint-disable-next-line react/jsx-filename-extension
-    <div className="container">
+    <div className="container pb-5">
       <div className="box" style={{ maxWidth: "800px", margin: "0 auto" }}>
         <h1 className="mt-3 mb-3">Anon DigiLocker</h1>
         <hr />
@@ -235,7 +241,15 @@ export function App() {
           </button>
         </form>
 
-        <div className="alert alert-light mt-3 mb-5">{status}</div>
+        {status.length > 0 && <div className="alert alert-light mt-4">{status}</div>}
+
+        {proof && (
+          <div className="alert alert-light">
+            <code>
+              <pre>{JSON.stringify(proof, null, 2)}</pre>
+            </code>
+          </div>
+        )}
       </div>
     </div>
   );
