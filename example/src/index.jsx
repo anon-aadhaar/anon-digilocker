@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer'
+import { Buffer } from 'buffer';
 import { createRoot } from "react-dom/client";
 import { App } from "./app";
 
