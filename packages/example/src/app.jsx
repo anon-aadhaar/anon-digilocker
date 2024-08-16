@@ -68,24 +68,21 @@ export function App() {
 
       setStatus("Generating proof...");
 
+      const startTime = performance.now()
       const fullProof = await groth16.fullProve(
         inputs,
         `${artifactsUrl}digilocker-verifier.wasm`,
         `${artifactsUrl}circuit_final.zkey`,
         console,
       );
-
-      console.log(fullProof);
-
-      setStatus("Verifying proof...");
-
       const result = await groth16.verify(
         await fetch(`${artifactsUrl}vkey.json`).then((res) => res.json()),
         fullProof.publicSignals,
         fullProof.proof,
       );
+      const endTime = performance.now();
 
-      setStatus(result ? "Proof verified" : "Proof failed");
+      setStatus(result ? `Proof generated and verified in ${(endTime - startTime).toFixed(2)}ms` : "Proof failed");
 
       if (result) {
         setProof(fullProof);
