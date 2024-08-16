@@ -5,6 +5,7 @@ import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
+import revealSelectors from "./reveal-selectors.json";
 import tutorialImage from "./assets/digilocker-how-to.gif";
 import "prismjs/components/prism-markup";
 import "prismjs/components/prism-clike";
@@ -14,12 +15,34 @@ import "prismjs/themes/prism.css";
 const artifactsUrl = import.meta.env.VITE_ARTIFACTS_URL;
 
 export function App() {
-  const [xmlContent, setXmlContent] = React.useState(``);
+  const [xmlContent, setXmlContent] = React.useState('');
   const [status, setStatus] = React.useState("");
   const [showModal, setShowModal] = React.useState(false);
-  const [revealStart, setRevealStart] = React.useState(`num="`);
-  const [revealEnd, setRevealEnd] = React.useState(`"`);
+  const [revealStart, setRevealStart] = React.useState('');
+  const [revealEnd, setRevealEnd] = React.useState('');
   const [proof, setProof] = React.useState();
+
+  function handleXMLChange(newXml) {
+    setXmlContent(newXml);
+
+    const hasMatch = revealSelectors.some((selector) => {
+      const searchKey = `<CertificateData><${selector.documentType}`;
+      console.log(searchKey);
+      
+      if (!newXml.includes(searchKey)) {
+        return false;
+      }
+
+      setRevealStart(selector.revealStart);
+      setRevealEnd(selector.revealEnd);
+      return true;
+    });
+
+    if (!hasMatch) {
+      setRevealStart('');
+      setRevealEnd('');
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -144,7 +167,7 @@ export function App() {
           <label htmlFor="xml">DigiLocker XML (Paste below)</label>
           <Editor
             value={xmlContent}
-            onValueChange={(code) => setXmlContent(code)}
+            onValueChange={(code) => handleXMLChange(code)}
             highlight={(code) => highlight(code, languages.text)}
             padding={10}
             style={{
@@ -179,7 +202,7 @@ export function App() {
                 type="text"
                 className="form-control"
                 id="revealStart"
-                placeholder={'num="'}
+                value={revealStart}
                 onChange={(e) => setRevealStart(e.target.value)}
               />
             </div>
@@ -190,7 +213,7 @@ export function App() {
                 type="text"
                 className="form-control"
                 id="revealEnd"
-                placeholder={'"'}
+                value={revealEnd}
                 onChange={(e) => setRevealEnd(e.target.value)}
               />
             </div>
