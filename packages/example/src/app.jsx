@@ -1,6 +1,6 @@
 import React from "react";
 import { groth16 } from "snarkjs";
-import { generateInput } from "@anon-digilocker/core";
+import { generateInput } from "@anon-digilocker/core/src/input-generator";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
 import Modal from "react-bootstrap/Modal";
