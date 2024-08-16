@@ -164,7 +164,7 @@ export function App() {
               <h5>Selective Disclosure</h5>
               <p>
                 You can reveal some data from the <code>{"<CertificateData />"}</code> node of the
-                XML, as part of the proof
+                XML, as part of the proof. Type of the Document (PAN, DirivingLicense, etc.) will always be revealed.
               </p>
               <p>
                 Enter the text from which the reveal should start and end. For example, in a PAN
@@ -203,7 +203,7 @@ export function App() {
               )}
               {revealString && !revealError && (
                 <div className="alert alert-success" role="alert">
-                  You are revealing <code>{revealString}</code> as part of the proof
+                  You are revealing <code>{revealString}</code> as part of the proof.
                 </div>
               )}
             </div>
