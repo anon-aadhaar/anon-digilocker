@@ -81,8 +81,9 @@ export function App() {
         fullProof.proof,
       );
       const endTime = performance.now();
+      const duration = Math.round((endTime - startTime) / 1000);
 
-      setStatus(result ? `Proof generated and verified in ${(endTime - startTime).toFixed(2)}ms` : "Proof failed");
+      setStatus(result ? `Proof generated and verified in ${duration}s` : "Proof failed");
 
       if (result) {
         setProof(fullProof);
