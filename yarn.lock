@@ -54,7 +54,7 @@ __metadata:
     dotenv: "npm:^16.4.5"
     mocha: "npm:^10.2.0"
     prettier: "npm:^3.1.1"
-    sha1-circom: "https://github.com/anon-aadhaar/sha1-circom#a91e785a1bea0c4ed843092273e5a15108aa09ae"
+    sha1-circom: "https://github.com/anon-aadhaar/sha1-circom#commit=a91e785a1bea0c4ed843092273e5a15108aa09ae"
     snarkjs: "npm:^0.7.4"
     ts-mocha: "npm:^10.0.0"
     typescript: "npm:^5.1.6"
@@ -7799,7 +7799,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sha1-circom@https://github.com/anon-aadhaar/sha1-circom#a91e785a1bea0c4ed843092273e5a15108aa09ae":
+"sha1-circom@https://github.com/anon-aadhaar/sha1-circom#commit=a91e785a1bea0c4ed843092273e5a15108aa09ae":
   version: 1.0.0
   resolution: "sha1-circom@https://github.com/anon-aadhaar/sha1-circom.git#commit=a91e785a1bea0c4ed843092273e5a15108aa09ae"
   dependencies:

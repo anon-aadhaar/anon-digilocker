@@ -19,7 +19,7 @@
   "dependencies": {
     "@anon-digilocker/core": "workspace:^",
     "@zk-email/circuits": "^6.1.3",
-    "sha1-circom": "https://github.com/anon-aadhaar/sha1-circom#a91e785a1bea0c4ed843092273e5a15108aa09ae"
+    "sha1-circom": "https://github.com/anon-aadhaar/sha1-circom#commit=a91e785a1bea0c4ed843092273e5a15108aa09ae"
   },
   "devDependencies": {
     "@types/circomlibjs": "^0.1.6",
