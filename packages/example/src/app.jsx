@@ -27,7 +27,6 @@ export function App() {
 
     const hasMatch = revealSelectors.some((selector) => {
       const searchKey = `<CertificateData><${selector.documentType}`;
-      console.log(searchKey);
       
       if (!newXml.includes(searchKey)) {
         return false;
